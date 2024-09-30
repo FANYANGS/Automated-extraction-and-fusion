@@ -15,7 +15,7 @@
 - 建议python=3.8
 - 使用前需准备好GPU,下载cuDNN与CUDA,cuDNN与CUDA版本联系参考:https:\\developer.nvidia.com\\rdp\\cudnn-archive
 - Paddle模型安装:https:\\www.paddlepaddle.org.cn\\
-- layoutparser安装:下载whl后 pip install "E:\Edge\layoutparser-0.0.0-py3-none-any.whl"
+- layoutparser安装:下载whl后 pip install "...\layoutparser-0.0.0-py3-none-any.whl"
 - paddleocr安装:pip install "paddleocr>=2.0.1"
 
 - paddle安装检查:
@@ -54,7 +54,7 @@
 
 ### 1. `--base_path`
 - **类型**：`str`
-- **默认值**：`"F:\\OCR\\TEST"`
+- **默认值**：`"..."`
 - **说明**：指定 PDF 文件所在的基础路径。建议使用双反斜杠 `\\` 来确保路径正确解析。
   
   **示例**：
@@ -113,7 +113,7 @@
   
   **示例**：
   ```bash
-  python script.py --keywords "Introduction","Conclusion"
+  python script.py --keywords "Introduction", "Conclusion"
 
 
 
