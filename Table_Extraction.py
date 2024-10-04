@@ -14,42 +14,41 @@ from pdf2image import convert_from_path
 from paddleocr import PaddleOCR, draw_ocr
 from openpyxl import Workbook, load_workbook
 
-# 建议python=3.8及以下
-# 使用前需准备好GPU,下载cuDNN与CUDA,cuDNN与CUDA版本联系参考:https:\\developer.nvidia.com\\rdp\\cudnn-archive
-# Paddle模型安装:https:\\www.paddlepaddle.org.cn\\
-# layoutparser安装:下载whl后 pip install "E:\Edge\layoutparser-0.0.0-py3-none-any.whl"
-# paddleocr安装:pip install "paddleocr>=2.0.1"
+# Recommended python version <= 3.8
+# Before using, prepare GPU, download cuDNN and CUDA, for cuDNN and CUDA version compatibility refer to: https://developer.nvidia.com/rdp/cudnn-archive
+# Paddle model installation: https://www.paddlepaddle.org.cn/
+# Layoutparser installation: Download whl and then use pip install "E:\Edge\layoutparser-0.0.0-py3-none-any.whl"
+# PaddleOCR installation: pip install "paddleocr>=2.0.1"
 
-# paddle安装检查:
+# Paddle installation check:
 # import paddle
 # paddle.utils.run_check()
 
-# 程序输出:base文件夹\\Excel_union: 合并后的Excel
-# 程序输出:base文件夹\\Data: 存放各中间步骤
-# 程序输出:base文件夹\\Data\\PDF名称\\PDF名称_results\\figure: 裁出的图
-# 程序输出:base文件夹\\Data\\PDF名称\\PDF名称_results\\table: 裁出的表
-# 若程序崩溃可尝试加如下代码：
+# Program output: base folder\\Excel_union: merged Excel files
+# Program output: base folder\\Data: stores intermediate steps
+# Program output: base folder\\Data\\PDF name\\PDF name_results\\figure: cropped figures
+# Program output: base folder\\Data\\PDF name\\PDF name_results\\table: cropped tables
+# If the program crashes, try adding the following code:
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-# 文件夹路径不能出现中文，若出现报错，可尝试去除空格等
-# 关于参数传入请跳转到代码最后的注释部分
+# !!! Folder path must not contain Chinese characters. If errors occur, try removing spaces, '-', and make filenames less than 10 letters long,etc.
+# For parameter passing, please refer to the comment section at the end of the code.
 
-# 重启解释器后需要加载模型等，程序运行时间较长，但一般不会超过5分钟（指代码运行至出现提示信息）。
-
+# After restarting the interpreter, loading models is required. The program runtime is long, but generally does not exceed 5 minutes (referring to the time until prompt messages appear).
 
 ocr = PaddleOCR(lang="en")
 
 def ocr_and_crop(pdf_path, keywords, results_folder):
     """
-    从PDF中提取指定关键词并裁剪出相应区域的图像。
+    Extracts specific keywords from a PDF and crops the corresponding image regions.
 
-    参数:
-    pdf_path (str): PDF文件的路径。
-    keywords (list of str): 需要查找的关键词列表。
-    results_folder (str): 存储裁剪结果的文件夹路径。
+    Parameters:
+    pdf_path (str): Path to the PDF file.
+    keywords (list of str): List of keywords to search for.
+    results_folder (str): Folder path to store the cropped results.
 
-    返回:
-    无返回值，裁剪后的图像将保存到指定的results_folder中。
+    Returns:
+    No return value. The cropped images will be saved to the specified results_folder.
     """
     def find_keyword_in_output(output, keyword):
         for item in output:
@@ -65,21 +64,21 @@ def ocr_and_crop(pdf_path, keywords, results_folder):
             return item[0]
         return None
 
-    # 复制并重命名 PDF文件
+    # Copy and rename the PDF file
     folder_path = os.path.dirname(pdf_path)
     pdf_name_with_extension = os.path.basename(pdf_path)
     pdf_name_without_extension, extension = os.path.splitext(pdf_name_with_extension)
 
-    # 使用正则表达式匹配所有数字和字母
-    new_pdf_base_name = ''.join(re.findall(r'[A-Za-z0-9]', pdf_name_without_extension))[:15]  # 切片保证不超过15个字符
+    # Use regular expression to match all numbers and letters
+    new_pdf_base_name = ''.join(re.findall(r'[A-Za-z0-9]', pdf_name_without_extension))[:15]  # Slice to ensure no more than 15 characters
 
-    # 在文件名后加上"_copy"后缀
+    # Add "_copy" suffix to the file name
     new_pdf_name = new_pdf_base_name + "_copy" + extension
 
-    # 构造新的PDF路径
+    # Construct new PDF path
     new_pdf_path = os.path.join(folder_path, new_pdf_name)
 
-    # 复制文件到新路径
+    # Copy file to new path
     shutil.copyfile(pdf_path, new_pdf_path)
 
     images_path = os.path.join(folder_path, results_folder, 'images')
@@ -88,10 +87,10 @@ def ocr_and_crop(pdf_path, keywords, results_folder):
     os.makedirs(f"{clip_path}", exist_ok=True)
     images = convert_from_path(new_pdf_path)
 
-    # 去掉 new_pdf_name 中的 '_copy.pdf' 部分
+    # Remove '_copy.pdf' part from new_pdf_name
     image_copy_name = os.path.splitext(new_pdf_name)[0]
 
-    # 然后，去掉结尾的 '_copy'
+    # Then remove the ending '_copy'
     if image_copy_name.endswith('_copy'):
         image_copy_name = image_copy_name[:-5]
 
@@ -127,31 +126,31 @@ def ocr_and_crop(pdf_path, keywords, results_folder):
         else:
             y1, y2 = int(min(coords_up, coords_down)), int(max(coords_up, coords_down))
             cropped_image = image_cv[y1:y2, :]
-            # 使用 text_before_keyword 作为文件名
+            # Use text_before_keyword as the filename
             cv2.imwrite(f"{clip_path}\\{text_before_keyword}.jpg", cropped_image)
 
-    # 删除复制的 PDF 文件
+    # Delete the copied PDF file
     os.remove(new_pdf_path)
 
 def image_ocr(image_path, excel_folder):
     """
-    对图像进行OCR识别，并将结果保存到Excel文件中。
+    Perform OCR on an image and save the results to an Excel file.
 
-    参数:
-    image_path (str): 图像文件的路径。
-    excel_folder (str): 保存Excel文件的文件夹路径。
+    Parameters:
+    image_path (str): Path to the image file.
+    excel_folder (str): Folder path to save the Excel file.
 
-    返回:
-    无返回值，识别结果以Excel文件形式保存。
+    Returns:
+    No return value. The recognition results will be saved as an Excel file.
     """
-    # 从image_path提取文件名（不含扩展名）
+    # Extract file name from image_path (without extension)
     number = os.path.splitext(os.path.basename(image_path))[0]
     image_cv = cv2.imread(image_path)
     image_height = image_cv.shape[0]
     image_width = image_cv.shape[1]
     output = ocr.ocr(image_path)[0]
 
-    # 将output的内容分为boxes,texts,probabilities
+    # Split the content of output into boxes, texts, probabilities
     boxes = [line[0] for line in output]
     texts = [line[1][0] for line in output]
     probabilities = [line[1][1] for line in output]
@@ -289,130 +288,130 @@ def image_ocr(image_path, excel_folder):
     excel_file_path = os.path.join(excel_folder, f"{number}.xlsx")
     df.to_excel(excel_file_path, index=False)
 
-    # 加载 Excel 文件
+    # Load Excel file
     workbook = load_workbook(filename=excel_file_path)
     sheet = workbook.active
 
-    # 删除第一列
+    # Delete the first row
     sheet.delete_rows(1)
 
-    # 保存修改后的文件
+    # Save the modified file
     workbook.save(excel_file_path)
 
 def process_images_in_folder(folder_path, excel_folder):
     """
-    对文件夹中的所有图像文件进行OCR识别，并将结果保存到Excel文件中。
+    Perform OCR on all image files in a folder and save the results to Excel files.
 
-    参数:
-    folder_path (str): 包含图像文件的文件夹路径。
-    excel_folder (str): 保存Excel文件的文件夹路径。
+    Parameters:
+    folder_path (str): Folder path containing image files.
+    excel_folder (str): Folder path to save the Excel files.
 
-    返回:
-    无返回值，为每个图像生成对应的Excel文件。
+    Returns:
+    No return value. An Excel file is generated for each image.
     """
-    # 获取folder_path下所有.jpg文件
+    # Get all .jpg files in folder_path
     for image_path in glob.glob(os.path.join(folder_path, "*.jpg")):
         image_ocr(image_path, excel_folder)
         print(f"Processed and created Excel for {image_path}")
 
 def merge_excels_to_sheets(source_folder, output_excel_path):
     """
-    将一个文件夹中的所有Excel文件合并为一个Excel文件，每个原文件为一个工作表。
+    Merge all Excel files in a folder into a single Excel file, each original file as a separate sheet.
 
-    参数:
-    source_folder (str): 包含源Excel文件的文件夹路径。
-    output_excel_path (str): 输出的Excel文件路径。
+    Parameters:
+    source_folder (str): Folder path containing source Excel files.
+    output_excel_path (str): Path for the output Excel file.
 
-    返回:
-    无返回值，合并后的Excel文件保存到output_excel_path。
+    Returns:
+    No return value, the merged Excel file is saved to output_excel_path.
     """
-    # 创建一个Excel writer
+    # Create an Excel writer
     writer = pd.ExcelWriter(output_excel_path, engine='openpyxl')
 
-    # 遍历source_folder中的所有Excel文件
+    # Iterate over all Excel files in source_folder
     for excel_file in glob.glob(os.path.join(source_folder, "*.xlsx")):
-        # 使用原Excel文件名（不含扩展名）作为sheet名
+        # Use the original Excel file name (without extension) as the sheet name
         sheet_name = os.path.splitext(os.path.basename(excel_file))[0]
 
-        # 读取Excel文件到DataFrame
+        # Read the Excel file into a DataFrame
         df = pd.read_excel(excel_file)
 
-        # 将DataFrame写入新Excel文件的一个sheet中
+        # Write the DataFrame to a new sheet in the output Excel file
         df.to_excel(writer, sheet_name=sheet_name, index=False)
 
-    # 保存新的Excel文件
+    # Save the new Excel file
     writer.close()
 
 def setup_environment(base_path):
     """
-    设置程序运行的环境，创建必要的文件夹。
+    Set up the environment for running the program, creating necessary folders.
 
-    参数:
-    base_path (str): 基础路径，所有输出文件夹将在该路径下创建。
+    Parameters:
+    base_path (str): Base path, all output folders will be created under this path.
 
-    返回:
-    无返回值，创建必要的文件夹结构。
+    Returns:
+    No return value, creates the necessary folder structure.
     """
-    # 防止系统崩溃
+    # Prevent system crash
     # os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
     os.makedirs(os.path.join(base_path, "Excel_union"), exist_ok=True)
     os.makedirs(os.path.join(base_path, "Data"), exist_ok=True)
 
-# 重命名文件以避免报错
+# Rename files to avoid errors
 def rename_pdf_files(pdf_folder):
     """
-    重命名PDF文件，保留字母和数字，避免文件名导致读取错误。
+    Rename PDF files, retaining letters and numbers, to avoid errors caused by file names.
 
-    参数:
-    pdf_folder (str): PDF文件所在的文件夹路径。
+    Parameters:
+    pdf_folder (str): Folder path containing the PDF files.
 
-    返回:
-    无返回值，文件重命名操作直接在文件系统中完成。
+    Returns:
+    No return value, renaming is performed directly in the file system.
     """
     pdf_files = glob.glob(os.path.join(pdf_folder, "*.pdf"))
     for pdf_path in pdf_files:
         pdf_name_with_extension = os.path.basename(pdf_path)
-        # 过滤文件名，保留字母、数字（空格可能会导致读取时报错）
+        # Filter file name, keep only letters and numbers (spaces may cause reading errors)
         filtered_name = re.sub(r'[^a-zA-Z0-9]', '', os.path.splitext(pdf_name_with_extension)[0])
         filtered_name = re.sub(r'\s+', ' ', filtered_name)
-        # 删除文件名末尾的空格
+        # Remove trailing spaces from the file name
         filtered_name = filtered_name.rstrip()
 
-        # 如果过滤后的文件名超过20个字符，截断它以保持在20个字符以内
+        # If the filtered file name exceeds 20 characters, truncate it to keep within 20 characters
         if len(filtered_name) > 20:
             filtered_name = filtered_name[:20]
 
-        # 构造新的PDF路径
+        # Construct new PDF path
         filtered_pdf_path = os.path.join(pdf_folder, f'{filtered_name}.pdf')
 
-        # 重命名PDF文件
+        # Rename the PDF file
         if pdf_path != filtered_pdf_path:
             shutil.move(pdf_path, filtered_pdf_path)
 
 def copy_pdf_folder(original_folder, backup_folder):
     """
-    复制整个PDF文件夹到备份位置。
+    Copy an entire PDF folder to a backup location.
 
-    参数:
-    original_folder (str): 源PDF文件夹路径。
-    backup_folder (str): 备份PDF文件夹路径。
+    Parameters:
+    original_folder (str): Path to the source PDF folder.
+    backup_folder (str): Path to the backup folder.
 
-    返回:
-    无返回值，文件夹复制操作直接在文件系统中完成。
+    Returns:
+    No return value, the folder copy operation is performed directly in the file system.
     """
     if not os.path.exists(backup_folder):
         shutil.copytree(original_folder, backup_folder)
 
 def restore_original_pdf_folder(backup_folder, original_folder):
     """
-    使用备份文件夹恢复原始的PDF文件夹。
+    Restore the original PDF folder from the backup folder.
 
-    参数:
-    backup_folder (str): 备份文件夹的路径。
-    original_folder (str): 原始文件夹的路径，将被还原。
+    Parameters:
+    backup_folder (str): Path to the backup folder.
+    original_folder (str): Path to the original folder, which will be restored.
 
-    返回:
-    无返回值，将备份文件夹还原为原始文件夹。
+    Returns:
+    No return value, restores the backup folder to the original folder.
     """
     if os.path.exists(original_folder):
         shutil.rmtree(original_folder)
@@ -420,28 +419,28 @@ def restore_original_pdf_folder(backup_folder, original_folder):
 
 def intersection(box_1, box_2):
     """
-    计算两个矩形框的交集。
+    Calculate the intersection of two bounding boxes.
 
-    参数:
-    box_1 (list of int): 第一个矩形框的坐标 [x1, y1, x2, y2]。
-    box_2 (list of int): 第二个矩形框的坐标 [x1, y1, x2, y2]。
+    Parameters:
+    box_1 (list of int): Coordinates of the first bounding box [x1, y1, x2, y2].
+    box_2 (list of int): Coordinates of the second bounding box [x1, y1, x2, y2].
 
-    返回:
-    list: 表示交集区域的矩形框坐标 [x1, y1, x2, y2]。
+    Returns:
+    list: Coordinates of the intersected region [x1, y1, x2, y2].
     """
     return [box_2[0], box_1[1], box_2[2], box_1[3]]
 
-# 计算iou(相交部分\\总的面积) 用于ocr
+# Calculate IoU (Intersection over Union) for OCR
 def iou(box_1, box_2):
     """
-    计算两个矩形框的交并比（Intersection over Union, IoU）。
+    Calculate the Intersection over Union (IoU) of two bounding boxes.
 
-    参数:
-    box_1 (list of int): 第一个矩形框的坐标 [x1, y1, x2, y2]。
-    box_2 (list of int): 第二个矩形框的坐标 [x1, y1, x2, y2]。
+    Parameters:
+    box_1 (list of int): Coordinates of the first bounding box [x1, y1, x2, y2].
+    box_2 (list of int): Coordinates of the second bounding box [x1, y1, x2, y2].
 
-    返回:
-    float: 两个矩形框的交并比（IoU）值，范围为 0 到 1。
+    Returns:
+    float: IoU value of the two bounding boxes, ranging from 0 to 1.
     """
     x_1 = max(box_1[0], box_2[0])
     y_1 = max(box_1[1], box_2[1])
@@ -459,34 +458,34 @@ def iou(box_1, box_2):
 
 def copy_sheet(source_sheet, target_sheet):
     """
-    将源工作表的内容复制到目标工作表。
+    Copy the content from the source worksheet to the target worksheet.
 
-    参数:
-    source_sheet (openpyxl.worksheet.worksheet.Worksheet): 源工作表对象。
-    target_sheet (openpyxl.worksheet.worksheet.Worksheet): 目标工作表对象。
+    Parameters:
+    source_sheet (openpyxl.worksheet.worksheet.Worksheet): Source worksheet object.
+    target_sheet (openpyxl.worksheet.worksheet.Worksheet): Target worksheet object.
 
-    返回:
-    无返回值，内容被复制到目标工作表。
+    Returns:
+    No return value, content is copied to the target worksheet.
     """
     for row in source_sheet:
         for cell in row:
             target_sheet[cell.coordinate].value = cell.value
 
-# 为每个PDF创建相应文件夹
+# Create corresponding folder for each PDF
 def img_initialization(pages_dir, results_dir, images, pdf_name_without_extension, table_ok, figure_ok):
     """
-    初始化图像处理的目录结构，并保存PDF每页的图像。
+    Initialize the directory structure for image processing and save the images of each page of the PDF.
 
-    参数:
-    pages_dir (str): 保存处理后图像的文件夹路径。
-    results_dir (str): 保存结果文件的文件夹路径。
-    images (list of PIL.Image): PDF转换后的图像列表。
-    pdf_name_without_extension (str): PDF文件名（不含扩展名）。
-    table_ok (bool): 是否提取表格信息。
-    figure_ok (bool): 是否提取图像信息。
+    Parameters:
+    pages_dir (str): Folder path to save processed images.
+    results_dir (str): Folder path to save result files.
+    images (list of PIL.Image): List of images converted from PDF.
+    pdf_name_without_extension (str): PDF file name (without extension).
+    table_ok (bool): Whether to extract table information.
+    figure_ok (bool): Whether to extract figure information.
 
-    返回:
-    无返回值，初始化的文件夹结构和图像被保存。
+    Returns:
+    No return value, initializes folder structure and saves images.
     """
     os.makedirs(pages_dir, exist_ok=True)
     os.makedirs(results_dir, exist_ok=True)
@@ -504,52 +503,53 @@ def img_initialization(pages_dir, results_dir, images, pdf_name_without_extensio
             f"{pages_dir}\\{pdf_name_without_extension}_page" + str(i) + ".jpg", "JPEG"
         )
         print(f"{pages_dir}\\{pdf_name_without_extension}_page" + str(i) + ".jpg")
-# Paddle模型解析PDF图片,分为0: "Text", 1: "Title", 2: "List", 3: "Table", 4: "Figure"
+
+# Paddle model parses PDF images, classified as 0: "Text", 1: "Title", 2: "List", 3: "Table", 4: "Figure"
 def pdf_detection(pages_dir, pdf_name_without_extension, page_num, model_threshold):
     """
-    对PDF页面进行对象检测，提取文本、表格和图像区域。
+    Perform object detection on PDF pages, extracting text, table, and figure regions.
 
-    参数:
-    pages_dir (str): 保存页面图像的文件夹路径。
-    pdf_name_without_extension (str): PDF文件名（不含扩展名）。
-    page_num (int): 当前处理的页面编号。
-    model_threshold (float): 模型检测的可信度阈值。
+    Parameters:
+    pages_dir (str): Folder path to save page images.
+    pdf_name_without_extension (str): PDF file name (without extension).
+    page_num (int): The current page number being processed.
+    model_threshold (float): Confidence threshold for model detection.
 
-    返回:
-    layout (list): 检测到的对象布局信息，包括文本、表格和图像。
+    Returns:
+    layout (list): Detected object layout information, including text, table, and figure.
     """
     image_path = f"{pages_dir}\\{pdf_name_without_extension}_{page_num}.jpg"
     print(image_path)
 
     image = cv2.imread(image_path)
     image = image[..., ::-1]
-    print(f"正在处理文件：{pdf_name_without_extension}, 页码：{page_num}")
+    print(f"Processing file: {pdf_name_without_extension}, page: {page_num}")
 
-    # load model
+    # Load model
     model = lp.PaddleDetectionLayoutModel(
         config_path="lp://PubLayNet/ppyolov2_r50vd_dcn_365e_publaynet/config",
-        # 可信度达到0.5认为是某一类
+        # Confidence of 0.5 or higher is considered as a specific class
         threshold = model_threshold,
         label_map={0: "Text", 1: "Title", 2: "List", 3: "Table", 4: "Figure"},
         enforce_cpu=False,
         enable_mkldnn=True,
     )  # math kernel library
-    # detect
+    # Detect
     layout = model.detect(image)
     return layout
 
-# 合并一个PDF对应的所有生成的xlsx文件
+# Merge all generated xlsx files for a single PDF
 def create_excel(results_dir, pdf_name_without_extension, base_path):
     """
-    将一个PDF对应的所有生成的Excel文件合并为一个。
+    Merge all generated Excel files for a single PDF into one.
 
-    参数:
-    results_dir (str): 存储中间Excel文件的目录。
-    pdf_name_without_extension (str): PDF文件名（不含扩展名）。
-    base_path (str): 基础路径，保存最终的合并Excel文件。
+    Parameters:
+    results_dir (str): Directory storing intermediate Excel files.
+    pdf_name_without_extension (str): PDF file name (without extension).
+    base_path (str): Base path to save the final merged Excel file.
 
-    返回:
-    无返回值，合并后的Excel文件保存到base_path路径下。
+    Returns:
+    No return value, the merged Excel file is saved to base_path.
     """
     wb = Workbook()
     excel_dir = f"{results_dir}\\excel"
@@ -557,11 +557,11 @@ def create_excel(results_dir, pdf_name_without_extension, base_path):
 
     excel_files = [f for f in os.listdir(excel_dir) if f.endswith(".xlsx")]
 
-    # 如果目录中没有Excel文件，添加一个默认的工作表
+    # If there are no Excel files in the directory, add a default sheet
     if not excel_files:
         wb.create_sheet(title="Sheet1")
     else:
-        # 如果有Excel文件，则移除默认添加的工作表
+        # If there are Excel files, remove the default added sheet
         wb.remove(wb.active)
 
     for excel_file in excel_files:
@@ -569,42 +569,41 @@ def create_excel(results_dir, pdf_name_without_extension, base_path):
         source_wb = load_workbook(file_path)
         source_sheet = source_wb.active
 
-        # 使用文件名（不包括扩展名）作为工作表名称
+        # Use file name (excluding extension) as the sheet name
         sheet_name = "_".join(excel_file.split("_")[1:])
         sheet_name = os.path.splitext(sheet_name)[0]
 
-        # 限制工作表名称为前25个字符
+        # Limit sheet name to the first 25 characters
         actual_sheet_name = sheet_name[:20]
 
-        # 创建新的工作表，名称为实际的工作表名称
+        # Create a new sheet with the actual sheet name
         target_sheet = wb.create_sheet(title=actual_sheet_name)
 
-        # 复制内容到新工作表
+        # Copy content to the new sheet
         copy_sheet(source_sheet, target_sheet)
 
-        # 找到目标工作表中最后一行的行号
+        # Find the last row in the target sheet
         last_row = target_sheet.max_row
 
-        # 在所有复制的内容之后的第二行插入文件名（不包括扩展名）
+        # Insert the file name (excluding extension) in the second row after all copied content
         target_sheet.cell(row=last_row + 2, column=1, value=sheet_name)
 
-    # 保存最终的工作簿
+    # Save the final workbook
     wb.save(final_excel_path)
-
 
 def process_pdf_file(pdf_path, base_path, table_ok, figure_ok, model_threshold):
     """
-    处理一个PDF文件，提取表格和图像，并生成对应的Excel文件。
+    Process a PDF file, extract tables and figures, and generate corresponding Excel files.
 
-    参数:
-    pdf_path (str): PDF文件的路径。
-    base_path (str): 程序的基础路径，用于保存处理结果。
-    table_ok (bool): 是否提取表格信息。
-    figure_ok (bool): 是否提取图像信息。
-    model_threshold (float): 模型检测的可信度阈值。
+    Parameters:
+    pdf_path (str): Path to the PDF file.
+    base_path (str): Base path for saving the processing results.
+    table_ok (bool): Whether to extract table information.
+    figure_ok (bool): Whether to extract figure information.
+    model_threshold (float): Confidence threshold for model detection.
 
-    返回:
-    无返回值，处理结果保存在指定路径下。
+    Returns:
+    No return value, processing results are saved to the specified path.
     """
     pdf_name_with_extension = os.path.basename(pdf_path)
     pdf_name_without_extension = os.path.splitext(pdf_name_with_extension)[0]
@@ -621,7 +620,7 @@ def process_pdf_file(pdf_path, base_path, table_ok, figure_ok, model_threshold):
     img_initialization(pages_dir, results_dir, images, pdf_name_without_extension, table_ok, figure_ok)
 
     # --------------------Table Extraction--------------------
-    # 遍历每一页，定位表格与图片
+    # Iterate over each page, locate tables and figures
     for page_idx in range(len(images)):
         page_num = f"page{page_idx}"
 
@@ -630,9 +629,9 @@ def process_pdf_file(pdf_path, base_path, table_ok, figure_ok, model_threshold):
         table_loc = []
         figure_loc = []
 
-        # 获得表格框坐标（适当扩展）
+        # Get table bounding box coordinates (slightly expanded)
         for l in layout:
-            # 表格定位
+            # Table location
             if table_ok:
                 if l.type == "Table":
                     x_1 = int(l.block.x_1) - 4
@@ -640,7 +639,7 @@ def process_pdf_file(pdf_path, base_path, table_ok, figure_ok, model_threshold):
                     x_2 = math.ceil(l.block.x_2) + 4
                     y_2 = int(l.block.y_2) - 4
                     table_loc.append((x_1, y_1, x_2, y_2))
-            # 图片定位
+            # Figure location
             if figure_ok:
                 if l.type == 'Figure':
                     x_3 = int(l.block.x_1) - 4
@@ -673,7 +672,7 @@ def process_pdf_file(pdf_path, base_path, table_ok, figure_ok, model_threshold):
                 image_height = image_cv.shape[0]
                 image_width = image_cv.shape[1]
                 output_table = ocr.ocr(image_path)[0]
-                if output_table and output_table[0]:  # 确保output_table不是None且包含识别结果
+                if output_table and output_table[0]:  # Ensure output_table is not None and contains results
                     texts_table = [line_table[1][0] for line_table in output_table]
                     texts_table_lower = [text.lower() for text in texts_table]
 
@@ -707,7 +706,7 @@ def process_pdf_file(pdf_path, base_path, table_ok, figure_ok, model_threshold):
                 )
 
                 # --------------------Text Detection and Recognition--------------------
-                # OCR部分，可独立
+                # OCR part, can be independent
                 ocr = PaddleOCR(lang="en")
                 image_path = f"{results_dir}\\table\\{pdf_name_without_extension}_{page_num}_table_{idx}.jpg"
                 image_cv = cv2.imread(image_path)
@@ -715,7 +714,7 @@ def process_pdf_file(pdf_path, base_path, table_ok, figure_ok, model_threshold):
                 image_width = image_cv.shape[1]
                 output = ocr.ocr(image_path)[0]
 
-                # 将output的内容分为boxes,texts,probabilities
+                # Split the content of output into boxes, texts, probabilities
                 boxes = [line[0] for line in output]
                 texts = [line[1][0] for line in output]
                 probabilities = [line[1][1] for line in output]
@@ -866,38 +865,37 @@ def process_pdf_file(pdf_path, base_path, table_ok, figure_ok, model_threshold):
                     index=False,
                 )
 
-                # 加载 Excel 文件
+                # Load the Excel file
                 workbook = load_workbook(
                     filename=f"{results_dir}\\excel\\{pdf_name_without_extension}_{page_num}_{idx}_{combined_text}.xlsx"
                 )
                 sheet = workbook.active
 
-                # 删除第一列
+                # Delete the first row
                 sheet.delete_rows(1)
 
-                # 保存修改后的文件
+                # Save the modified file
                 workbook.save(
                     f"{results_dir}\\excel\\{pdf_name_without_extension}_{page_num}_{idx}_{combined_text}.xlsx"
                 )
     if table_ok:
         create_excel(results_dir, pdf_name_without_extension, base_path)
 
-
 def main(base_path, table_ok, figure_ok, model_threshold, mode, base_folder, keywords):
     """
-    主函数，控制程序的流程，处理PDF文件，提取表格或关键词对应的图像区域。
+    Main function to control the workflow of the program, processing PDF files to extract tables or keyword-related image areas.
 
-    参数:
-    base_path (str): 基础路径，存储处理结果。
-    table_ok (bool): 是否提取表格信息。
-    figure_ok (bool): 是否提取图像信息。
-    model_threshold (float): 模型检测的可信度阈值。
-    mode (str): 处理模式，'normal' 或 'keyword'。
-    base_folder (str): PDF文件所在的基础文件夹路径。
-    keywords (list of str): 需要查找的关键词列表（仅在 'keyword' 模式下有效）。
+    Parameters:
+    base_path (str): Base path to store processing results.
+    table_ok (bool): Whether to extract table information.
+    figure_ok (bool): Whether to extract figure information.
+    model_threshold (float): Confidence threshold for model detection.
+    mode (str): Processing mode, either 'normal' or 'keyword'.
+    base_folder (str): Base folder path where PDF files are stored.
+    keywords (list of str): List of keywords to search for (only valid in 'keyword' mode).
 
-    返回:
-    无返回值，完成指定模式下的PDF文件处理。
+    Returns:
+    No return value, completes PDF file processing in the specified mode.
     """
     print(mode)
     if mode == 'normal':
@@ -905,31 +903,31 @@ def main(base_path, table_ok, figure_ok, model_threshold, mode, base_folder, key
 
         setup_environment(base_path)
 
-        # 创建Document文件夹（如果已有则清空）
+        # Create Document folder (clear if it already exists)
         pdf_folder = os.path.join(base_path, "Document")
         if os.path.exists(pdf_folder):
             shutil.rmtree(pdf_folder)
         os.makedirs(pdf_folder)
 
-        # 将base_path中的PDF文件复制到Document文件夹中
+        # Copy PDF files from base_path to Document folder
         for pdf_file in glob.glob(os.path.join(base_path, "*.pdf")):
             shutil.copy(pdf_file, pdf_folder)
 
-        # 复制PDF文件夹
+        # Copy the PDF folder
         copy_pdf_folder(pdf_folder, backup_folder)
 
         rename_pdf_files(pdf_folder)
 
-        # 获取文件夹内所有的PDF文件
+        # Get all PDF files in the folder
         pdf_files = glob.glob(os.path.join(pdf_folder, "*.pdf"))
 
-        # 遍历裁剪&OCR
+        # Iterate through PDF files for cropping and OCR
         for pdf_path in pdf_files:
             process_pdf_file(pdf_path, base_path, table_ok, figure_ok, model_threshold)
 
         restore_original_pdf_folder(backup_folder, pdf_folder)
 
-        # 删除Document文件夹
+        # Delete the Document folder
         shutil.rmtree(pdf_folder)
 
     if mode == 'keyword':
@@ -949,29 +947,29 @@ def main(base_path, table_ok, figure_ok, model_threshold, mode, base_folder, key
                     os.makedirs(excel_folder)
 
                 if os.listdir(clip_folder_path):
-                    # 如果clip文件夹不为空，则执行下列函数
+                    # If the clip folder is not empty, proceed with the following functions
                     process_images_in_folder(clip_folder_path, excel_folder)
                     merge_excels_to_sheets(excel_folder, excel_path)
 
 if __name__ == "__main__":
-    # 可使用脚本传参，或调整默认参数运行
+    # Script argument parsing, or adjust the default parameters for running
     parser = argparse.ArgumentParser()
-    # pdf存放路径 推荐使用\\
-    parser.add_argument("--base_path", type=str, default=r"F:\\OCR\\TEST")
-    # 是否提取表格
+    # Path where PDF files are stored, recommended to use '\\'
+    # parser.add_argument("--base_path", type=str, default=os.path.join(os.getcwd(), "test"))
+    parser.add_argument("--base_path", type=str, default=r"F:\\OCR\\test")
+    # Whether to extract tables
     parser.add_argument("--table_ok", type=bool, default=True)
-    # 是否提取图像
+    # Whether to extract figures
     parser.add_argument("--figure_ok", type=bool, default=True)
-    # 模型检测的可信度阈值
+    # Confidence threshold for model detection
     parser.add_argument("--model_threshold", type=float, default=0.5)
-    # 处理模式 （一般论文使用normal，关键词功能并不完善）
+    # Processing mode ('normal' is used for general papers, the keyword function is not fully developed)
     parser.add_argument("--mode", type=str, default='normal')
-    # 关键词模式下存放路径
+    # Path where files are stored in keyword mode
     parser.add_argument('--base_folder', type=str, default=r"base_folder")
-    # 关键词列表
+    # List of keywords
     parser.add_argument('--keywords', type=str, nargs='+', default=["Keywords"])
 
     args = parser.parse_args()
 
     main(args.base_path, args.table_ok, args.figure_ok, args.model_threshold, args.mode, args.base_folder, args.keywords)
-
