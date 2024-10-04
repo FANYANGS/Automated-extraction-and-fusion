@@ -1,6 +1,6 @@
 # Project Overview
-This project provides a solution for automated extraction and lossless fusion of multi-source test data for heterogeneous tables. This method is highly automated, and the fused data retains all information, supporting various modes of data retrieval.
-The project is actually used for the extraction and storage of groundwater heavy metal ion concentrations in the literature, please adjust as needed.
+This project offers an automated solution for the extraction and lossless integration of multi-source test data from heterogeneous tables. Highly automated, this method ensures that the fused data retains all original information and supports various modes of data retrieval. 
+Specifically, the project is applied to the extraction and storage of groundwater heavy metal ion concentrations from literature sources.
 
 # Automated Table Information Extraction Module Deployment Guide
 
