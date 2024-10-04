@@ -1,133 +1,130 @@
-# 项目简介
-本项目提供了一种面向异构表格的多源测试数据自动化提取与无损融合的解决方案，paddle_union（自动化提取）与【1】表格转置 + 【2】元素存储综合（融合）。
-本项目实际用于文献中地下水重金属离子浓度的提取与存储工作，请按需调整。
+# Project Overview
+This project provides a solution for automated extraction and lossless fusion of multi-source test data for heterogeneous tables. This method is highly automated, and the fused data retains all information, supporting various modes of data retrieval.
+The project is actually used for the extraction and storage of groundwater heavy metal ion concentrations in the literature, please adjust as needed.
 
+# Automated Table Information Extraction Module Deployment Guide
 
+## Prerequisites
 
+Before starting the deployment, please ensure that you meet the following conditions:
 
+- Recommended python=3.8
+- Prepare GPU, download cuDNN and CUDA before use, refer to cuDNN and CUDA version: https://developer.nvidia.com/rdp/cudnn-archive
+- Paddle model installation: https://www.paddlepaddle.org.cn/
+- layoutparser installation: After downloading the whl, pip install "E:\Edge\layoutparser-0.0.0-py3-none-any.whl"
+- paddleocr installation: pip install "paddleocr>=2.0.1"
 
-# paddle_union（自动化提取）项目部署指南
+- Paddle installation check:
+  ```python
+  import paddle
+  paddle.utils.run_check()
+  ```
 
-## 先决条件
+- Before starting the run, you only need to pass the path of the pdf folder to --base_path and set other parameters as needed.
+- !!! Folder path must not contain Chinese characters. If errors occur, try removing spaces, '-', and make filenames less than 10 letters long,etc.
 
-在开始部署之前，请确保您已经满足以下条件：
+## Program Output
 
-- 建议python=3.8
-- 使用前需准备好GPU,下载cuDNN与CUDA,cuDNN与CUDA版本联系参考:https:\\developer.nvidia.com\\rdp\\cudnn-archive
-- Paddle模型安装:https:\\www.paddlepaddle.org.cn\\
-- layoutparser安装:下载whl后 pip install "...\layoutparser-0.0.0-py3-none-any.whl"
-- paddleocr安装:pip install "paddleocr>=2.0.1"
+- **Merged Excel File**: The final merged result will be output to the `base\\Excel_union` directory.
+- **Intermediate Step Data**: Intermediate step files during program execution will be saved in the `base\\Data` directory.
+- **Cropped Images**: Images cropped during PDF processing will be saved in `base\\Data\\PDFName\\PDFName_results\\figure`.
+- **Cropped Tables**: Tables cropped during PDF processing will be saved in `base\\Data\\PDFName\\PDFName_results\\table`.
 
-- paddle安装检查:
-- import paddle
-- paddle.utils.run_check()
+## Error Handling
 
-- 开始运行前，您只需将pdf文件夹路径传入--base_path，并按需求设置其他参数即可。
-
-## 程序输出
-
-- **合并的 Excel 文件**：程序会将最终的合并结果输出到 `base文件夹\\Excel_union` 目录下。
-- **中间步骤数据**：程序运行中的中间步骤文件会保存在 `base文件夹\\Data` 目录下。
-- **裁剪出的图像**：PDF 处理过程中裁剪出的图像将保存在 `base文件夹\\Data\\PDF名称\\PDF名称_results\\figure`。
-- **裁剪出的表格**：PDF 处理过程中裁剪出的表格将保存在 `base文件夹\\Data\\PDF名称\\PDF名称_results\\table`。
-
-## 错误处理
-
-- 如果程序在运行过程中崩溃，可能是由于多次加载库导致的冲突问题。可以尝试在代码开头加入以下代码来解决：
+- If the program crashes during execution, it may be due to conflicts caused by multiple library loads. You can try adding the following code at the beginning of the code to solve it:
   ```python
   os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+  ```
 
-- 文件夹路径不能出现中文，若出现报错，可尝试去除空格等
+- Folder paths cannot contain Chinese characters. If an error occurs, try removing spaces, etc.
 
-## 程序运行
-- 重启解释器后需要加载模型等，程序运行时间较长，但一般不会超过5分钟（指代码运行至出现提示信息）。
+## Program Execution
+- After restarting the interpreter, models and other components need to be loaded. The program runtime is relatively long, but generally does not exceed 5 minutes (referring to the time from code execution to the appearance of prompt information).
 
+# Automated Table Information Extraction Script Execution Guide
 
+The program can be run by passing custom parameters through command line arguments or by directly using the default parameters. The following are the descriptions of each parameter in the script:
 
-
-
-# paddle_union（自动化提取）脚本运行指南
-
-该程序可以通过命令行参数传递自定义参数来运行，也可以直接使用默认参数执行。以下是脚本中各个参数的说明：
-
-## 命令行参数
+## Command Line Parameters
 
 ### 1. `--base_path`
-- **类型**：`str`
-- **默认值**：`"..."`
-- **说明**：指定 PDF 文件所在的基础路径。建议使用双反斜杠 `\\` 来确保路径正确解析。
+- **Type**: `str`
+- **Default Value**: `"F:\\OCR\\TEST"`
+- **Description**: Specifies the base path where the PDF files are located. It is recommended to use double backslashes `\\` to ensure the path is correctly parsed.
   
-  **示例**：
+  **Example**:
   ```bash
   python script.py --base_path "D:\\MyPDFs\\Documents"
+  ```
 
 ### 2. `--table_ok`
-- **类型**：`bool`
-- **默认值**：`"True`
-- **说明**：是否提取 PDF 中的图像信息。如果设置为 True，程序会提取图像信息。
+- **Type**: `bool`
+- **Default Value**: `"True"`
+- **Description**: Whether to extract table information from the PDF. If set to True, the program will extract table information.
   
-  **示例**：
+  **Example**:
   ```bash
   python script.py --figure_ok False
+  ```
 
 ### 3. `--figure_ok`
-- **类型**：`bool`
-- **默认值**：`"True`
-- **说明**：是否提取 PDF 中的图像信息。如果设置为 True，程序会提取图像信息。
+- **Type**: `bool`
+- **Default Value**: `"True"`
+- **Description**: Whether to extract image information from the PDF. If set to True, the program will extract image information.
   
-  **示例**：
+  **Example**:
   ```bash
   python script.py --figure_ok True
+  ```
 
 ### 4. `--model_threshold`
-- **类型**：`float`
-- **默认值**：`0.5`
-- **说明**：设置模型检测的可信度阈值。值越高，检测越严格。默认值为 0.5，表示可信度达到 50% 以上的检测会被认为有效。
+- **Type**: `float`
+- **Default Value**: `0.5`
+- **Description**: Sets the confidence threshold for model detection. The higher the value, the stricter the detection. The default value is 0.5, which means that detections with a confidence level of 50% or higher will be considered valid.
   
-  **示例**：
+  **Example**:
   ```bash
   python script.py --model_threshold 0.5
+  ```
 
 ### 5. `--mode`
-- **类型**：`str`
-- **默认值**：`normal`
-- **说明**：选择处理模式。一般使用 normal 模式来处理论文等标准文档。还有一个 keyword 模式用于关键词提取，但该功能并不完善。
+- **Type**: `str`
+- **Default Value**: `normal`
+- **Description**: Selects the processing mode. Generally, the normal mode is used to process standard documents such as papers. There is also a keyword mode for keyword extraction, but this function is not perfect.
   
-  **示例**：
+  **Example**:
   ```bash
   python script.py --mode "keyword"
+  ```
 
 ### 6. `--base_folder`
-- **类型**：`str`
-- **默认值**：`base_folder`
-- **说明**：当使用 keyword 模式时，指定关键词模式下存放 PDF 文件的基础路径。
+- **Type**: `str`
+- **Default Value**: `base_folder`
+- **Description**: When using keyword mode, specifies the base path where the PDF files are stored in keyword mode.
   
-  **示例**：
+  **Example**:
   ```bash
   python script.py --base_folder "D:\\KeywordPDFs"
+  ```
 
 ### 7. `--keywords`
-- **类型**：`list of str`
-- **默认值**：`["Keywords"]`
-- **说明**：当使用 keyword 模式时，传递一个关键词列表，用于在 PDF 中定位和裁剪相关区域。
+- **Type**: `list of str`
+- **Default Value**: `["Keywords"]`
+- **Description**: When using keyword mode, pass a list of keywords to locate and crop relevant areas in the PDF.
   
-  **示例**：
+  **Example**:
   ```bash
-  python script.py --keywords "Introduction", "Conclusion"
+  python script.py --keywords "Introduction","Conclusion"
+  ```
 
+# Lossless Fusion Module Deployment Guide Based on Tuplets
+This project is used for the extraction and storage of groundwater heavy metal ion concentrations in the literature, please adjust as needed.
 
+## Table Preprocessing
 
+The header elements of the table may exist in rows or columns. Run the table transposition to uniformly convert them to row headers. Modify the path where the excel is stored according to the code comments.
 
+## Data Fusion Based on Sextuplets
 
-# 融合项目部署指南
-本项目用于文献中地下水重金属离子浓度的提取与存储工作，请按需调整。
-
-## 表格转置
-
-表格的表头元素可能存在于行或列，运行表格转置将其统一转化为行表头
-按代码注释修改存放excel的路径即可
-
-## 元素存储综合
-
-批量提取表格信息，识别元素名称与其对应的信息，转化为五元组的形式，['filename', 'element', 'sample_info', 'unit', 'data']
-按照提示修改路径，关键词信息（即无单位会干扰识别的元素）
+Batch extract table information, identify element names and their corresponding information, and convert them into the form of quintuplets, ['filename', 'element', 'sample_info', 'unit', 'data']. Modify the path and keyword information (i.e., elements without units that interfere with recognition) according to the prompts.
